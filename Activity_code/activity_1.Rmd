@@ -1,0 +1,113 @@
+---
+title: "Activity 1"
+author: "obe432"
+date: "2024-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries}
+library(tidyverse)
+```
+
+
+```{r load dataset}
+View(phc_data)
+```
+
+
+1.number of obsevartion and number of variables
+```{r number of rows and columns}
+ncol(phc_data)
+nrow(phc_data)
+```
+
+2. identify all variables with missing data
+```{r missing value (N/A)}
+colnames(phc_data)
+
+colSums(is.na(phc_data))
+
+```
+
+3. type of variable
+```{r structure of the dataset}
+glimpse(phc_data)  #or
+sapply(phc_data, class) 
+```
+
+
+
+Question 4, we have to select the column or variabke we will be using for the assignment. We have to change some label to factors or character for more understanding.
+
+```{r selecting the type of variable and mutating some of the variable type to labels for understanding}
+phc_data_1 <- phc_data %>% 
+  select(nqid, region, a11d, p02, p17, p10) %>% 
+  mutate(across(c(region, a11d, p17, p10), sjlabelled::as_label)) 
+
+phc_data_1
+```
+
+types of variable and missing values in the new data
+```{r}
+sapply(phc_data_1, class)
+
+colSums(is.na(phc_data_1))
+
+```
+
+
+4. without applying weight to the data generate 
+
+*number of male and female by region
+```{r number of a11d by region }
+gender_region_count <- phc_data_1 %>%
+group_by(region, a11d) %>%
+summarise(count = n()) %>%
+arrange(region)
+gender_region_count
+
+```
+*number of male and female by sector of employment
+```{r no of a12d by p17}
+gender_sector_count <- phc_data_1 %>%
+group_by(p17, a11d) %>%
+summarise(count = n()) %>%
+arrange(p17)
+gender_sector_count
+```
+
+
+
+*number of girls below 12 years who are married
+
+first group them into a categorical data 
+```{r catogerical data ( informal marriage, married, never married, married before)}
+ 
+phc_data_2 <- phc_data_1 %>%
+  mutate(marital_status = case_when(
+    p10 == "Informal/living together" ~ "Informal marriage",
+    p10 %in% c("Married (Civil/Ordinance)", "Married (Customary/Traditional)", "Married (Islamic)", "Married (Other type)") ~ "Married",
+    p10 == "Never married" ~ "Never married",
+    p10 %in% c("Separated", "Divorced", "Widowed") ~ "Married before"
+  )) %>%
+   mutate(marital_status = factor(marital_status, levels = c("Informal marriage", "Married", "Never married","Married before")))
+  
+phc_data_2
+
+```
+
+
+```{r no of female < 12yrs who are married}
+girls_married_count <- phc_data_2 %>%
+  dplyr::filter(a11d == "Female", p02 < 12, marital_status == "Married") %>%
+  summarise(count = n())
+
+girls_married_count
+
+```
+
+
